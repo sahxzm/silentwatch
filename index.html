@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Silentwatch</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #18181b; color: #fff; }
+    .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; padding-left: 2rem; background: none; }
+    .tab { padding: 0.7rem 2rem; cursor: pointer; border-radius: 8px 8px 0 0; background: #f0fdf4; color: #166534; font-weight: 600; font-size: 1.1rem; border: 1.5px solid #bbf7d0; border-bottom: none; transition: background 0.2s, color 0.2s; }
+    .tab.active { background: #bbf7d0; color: #15803d; border-bottom: 2.5px solid #22c55e; box-shadow: 0 2px 6px #0001; }
+    .panel { padding: 2rem; }
+    .log-panel { background: #222; border-radius: 8px; padding: 1rem; margin-top: 1rem; height: 200px; overflow-y: auto; color: #fff; }
+    .risk-low { color: #22c55e; }
+    .risk-medium { color: #eab308; }
+    .risk-high { color: #ef4444; }
+    button { background: #38bdf8; color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin-top: 1rem; }
+    button:active { background: #0284c7; }
+    table { width: 100%; margin-top: 1rem; border-collapse: collapse; }
+    th, td { padding: 0.5rem; border-bottom: 1px solid #333; }
+    th { background: #23232a; }
+  </style>
+</head>
+<body style="background: #f7fef6; min-height: 100vh;">
+  <div style="padding: 2rem 0 1rem 2rem; display: flex; align-items: center; gap: 1rem;">
+    <div style="background: #d1fae5; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+      <svg width="30" height="30" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="28" height="28" rx="14" fill="#bbf7d0"/><path d="M14 8l5 2v4c0 3.5-2.5 6.5-5 8-2.5-1.5-5-4.5-5-8V10l5-2z" fill="#22c55e"/></svg>
+    </div>
+    <span style="font-size: 2rem; font-weight: bold; color: #15803d; letter-spacing: -1px;">Silentwatch</span>
+  </div>
+  <div class="tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; padding-left: 2rem;">
+
+    <div class="tab active" id="tab-process">Process Monitor</div>
+    <div class="tab" id="tab-apps">Running Applications</div>
+    <div class="tab" id="tab-overlay">Overlay Scanner</div>
+  </div>
+  <div class="panel" id="panel-process" style="background: #fff; border-radius: 12px; box-shadow: 0 2px 8px #0001; margin: 0 2vw 2rem 2vw; padding: 2rem 1vw; max-width: 100vw; color: #18181b; overflow-x: auto;">
+    <h2 style="color: #166534; font-size: 2rem; margin-bottom: 1.5rem;">Running Processes</h2>
+    <div style="margin-bottom: 1.3rem; display: flex; align-items: flex-end; gap: 1.5rem; flex-wrap: wrap;">
+      <div style="position:relative;">
+        <label for="proc-search" style="font-weight:600; color:#166534;">Search Process:</label><br>
+        <input id="proc-search" type="text" autocomplete="off" placeholder="Enter process name (e.g. svchost.exe)" style="padding:0.5em 1em; border-radius:6px; border:1px solid #bbf7d0; font-size:1em; margin-top:0.2em; width:220px;">
+        <div id="proc-suggestions" style="position:absolute; left:0; top:2.7em; background:#fff; color:#18181b; border:1px solid #bbf7d0; border-radius:6px; box-shadow:0 2px 8px #0002; z-index:10; width:100%; display:none;"></div>
+      </div>
+      <div id="proc-search-result" style="min-width:220px; margin-bottom:0.2em;"></div>
+    </div>
+    <button onclick="refreshProcesses()" style="background: #16a34a; color: #fff; border: none; padding: 0.7rem 2.2rem; border-radius: 8px; font-size: 1.1rem; font-weight: 600; box-shadow: 0 1px 3px #0001; margin-bottom: 1.2rem; cursor:pointer;">Refresh</button>
+    <div style="overflow-x: auto;">
+      <table id="process-table" style="width: 100%; min-width: 700px; margin-top: 1rem; border-collapse: separate; border-spacing: 0 0.4rem;">
+        <thead>
+          <tr style="background: #f0fdf4; color: #166534; font-size: 1.08rem;">
+            <th style="padding: 0.7rem 1rem; border: none; text-align: left;">PID</th>
+            <th style="padding: 0.7rem 1rem; border: none; text-align: left;">Name</th>
+            <th style="padding: 0.7rem 1rem; border: none; text-align: left;">Path</th>
+            <th style="padding: 0.7rem 1rem; border: none; text-align: left;">Risk Level</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <style>
+      @media (max-width: 900px) {
+        .panel { padding: 1rem 0.2rem !important; }
+        table { min-width: 500px !important; font-size: 0.97em; }
+        th, td { padding: 0.5rem 0.4rem !important; }
+      }
+      @media (max-width: 600px) {
+        .panel { padding: 0.5rem 0 !important; }
+        table { min-width: 350px !important; font-size: 0.93em; }
+        th, td { padding: 0.3rem 0.18rem !important; }
+      }
+    </style>
+    <div class="log-panel" id="process-log"></div>
+  </div>
+  <div class="panel" id="panel-apps" style="display:none; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px #0001; margin: 0 2vw 2rem 2vw; padding: 2rem 1vw; max-width: 100vw; color: #18181b; overflow-x: auto;">
+    <h2 style="color: #166534; font-size: 2rem; margin-bottom: 1.5rem;">Running Applications</h2>
+    <button onclick="refreshApps()" style="background: #16a34a; color: #fff; border: none; padding: 0.7rem 2.2rem; border-radius: 8px; font-size: 1.1rem; font-weight: 600; box-shadow: 0 1px 3px #0001; margin-bottom: 1.2rem; cursor:pointer;">Refresh</button>
+    <table id="apps-table" style="width: 100%; margin-top: 1rem; border-collapse: separate; border-spacing: 0 0.4rem;">
+      <thead>
+        <tr style="background: #f0fdf4; color: #166534; font-size: 1.08rem;">
+          <th style="padding: 0.7rem 1rem; border: none; text-align: left;">PID</th>
+          <th style="padding: 0.7rem 1rem; border: none; text-align: left;">Window Title</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="log-panel" id="apps-log"></div>
+  </div>
+  <div class="panel" id="panel-overlay" style="display:none; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px #0001; margin: 0 2vw 2rem 2vw; padding: 2rem 1vw; max-width: 100vw; color: #18181b; overflow-x: auto;">
+    <h2 style="color: #166534; font-size: 2rem; margin-bottom: 1.5rem;">Overlay Scanner</h2>
+    <button onclick="refreshOverlays()" style="background: #16a34a; color: #fff; border: none; padding: 0.7rem 2.2rem; border-radius: 8px; font-size: 1.1rem; font-weight: 600; box-shadow: 0 1px 3px #0001; margin-bottom: 1.2rem; cursor:pointer;">Scan</button>
+    <table id="overlay-table" style="width: 100%; margin-top: 1rem; border-collapse: separate; border-spacing: 0 0.4rem;">
+      <thead>
+        <tr style="background: #f0fdf4; color: #166534; font-size: 1.08rem;">
+          <th style="padding: 0.7rem 1rem; border: none; text-align: left;">Window Title</th>
+          <th style="padding: 0.7rem 1rem; border: none; text-align: left;">Risk</th>
+          <th style="padding: 0.7rem 1rem; border: none; text-align: left;">Reason</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="log-panel" id="overlay-log"></div>
+  </div>
+  <script>
+    const { ipcRenderer } = require('electron');
+    document.getElementById('tab-process').onclick = () => {
+      setTab('process');
+    };
+    document.getElementById('tab-apps').onclick = () => {
+      setTab('apps');
+    };
+    document.getElementById('tab-overlay').onclick = () => {
+      setTab('overlay');
+    };
+    function setTab(tab) {
+      document.getElementById('tab-process').classList.remove('active');
+      document.getElementById('tab-apps').classList.remove('active');
+      document.getElementById('tab-overlay').classList.remove('active');
+      document.getElementById('panel-process').style.display = 'none';
+      document.getElementById('panel-apps').style.display = 'none';
+      document.getElementById('panel-overlay').style.display = 'none';
+      if (tab === 'process') {
+        document.getElementById('tab-process').classList.add('active');
+        document.getElementById('panel-process').style.display = '';
+      } else if (tab === 'apps') {
+        document.getElementById('tab-apps').classList.add('active');
+        document.getElementById('panel-apps').style.display = '';
+      } else {
+        document.getElementById('tab-overlay').classList.add('active');
+        document.getElementById('panel-overlay').style.display = '';
+      }
+    }
+    async function refreshProcesses() {
+      const log = document.getElementById('process-log');
+      log.textContent = 'Scanning...';
+      try {
+        const processes = await ipcRenderer.invoke('monitor-processes');
+        const tbody = document.querySelector('#process-table tbody');
+        tbody.innerHTML = '';
+        processes.forEach(proc => {
+          const tr = document.createElement('tr');
+          let badgeColor = '#22c55e', badgeBg = '#dcfce7';
+          if (proc.risk === 'Medium') { badgeColor = '#eab308'; badgeBg = '#fef9c3'; }
+          if (proc.risk === 'High') { badgeColor = '#ef4444'; badgeBg = '#fee2e2'; }
+          tr.innerHTML = `<td style="padding:0.7rem 1rem;">${proc.pid}</td><td style="padding:0.7rem 1rem;">${proc.name}</td><td style="padding:0.7rem 1rem;">${proc.exePath || ''}</td><td style="padding:0.7rem 1rem;"><span style="display:inline-block; padding:0.32em 1.1em; font-size:1em; border-radius:999px; background:${badgeBg}; color:${badgeColor}; font-weight:600; letter-spacing:0.5px;">${proc.risk}</span></td>`;
+          tbody.appendChild(tr);
+        });
+        log.textContent = `Found ${processes.length} processes.`;
+      } catch (err) {
+        log.textContent = 'Error: ' + err;
+      }
+    }
+    async function refreshOverlays() {
+      const log = document.getElementById('overlay-log');
+      log.textContent = 'Scanning...';
+      try {
+        const overlays = await ipcRenderer.invoke('scan-overlays');
+        const tbody = document.querySelector('#overlay-table tbody');
+        tbody.innerHTML = '';
+        overlays.forEach(win => {
+          const tr = document.createElement('tr');
+          let badgeColor = '#22c55e', badgeBg = '#dcfce7';
+          if (win.risk === 'Medium') { badgeColor = '#eab308'; badgeBg = '#fef9c3'; }
+          if (win.risk === 'High') { badgeColor = '#ef4444'; badgeBg = '#fee2e2'; }
+          tr.innerHTML = `<td style=\"padding:0.7rem 1rem;\">${win.windowTitle}</td><td style=\"padding:0.7rem 1rem;\"><span style=\"display:inline-block; padding:0.32em 1.1em; font-size:1em; border-radius:999px; background:${badgeBg}; color:${badgeColor}; font-weight:600; letter-spacing:0.5px;\">${win.risk}</span></td><td style=\"padding:0.7rem 1rem;\">${win.reason}</td>`;
+          tbody.appendChild(tr);
+        });
+        log.textContent = `Found ${overlays.length} suspicious overlay(s).`;
+      } catch (err) {
+        log.textContent = 'Error: ' + err;
+      }
+    }
+    async function refreshApps() {
+      const log = document.getElementById('apps-log');
+      log.textContent = 'Scanning...';
+      try {
+        const apps = await ipcRenderer.invoke('get-running-apps');
+        const tbody = document.querySelector('#apps-table tbody');
+        tbody.innerHTML = '';
+        apps.forEach(app => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td style=\"padding:0.7rem 1rem;\">${app.pid}</td><td style=\"padding:0.7rem 1rem;\">${app.windowTitle}</td>`;
+          tbody.appendChild(tr);
+        });
+        log.textContent = `Found ${apps.length} running application(s).`;
+      } catch (err) {
+        log.textContent = 'Error: ' + err;
+      }
+    }
+    // --- Process Search with Suggestions ---
+    let allProcesses = [];
+    async function updateProcessList() {
+      allProcesses = await ipcRenderer.invoke('monitor-processes');
+    }
+    updateProcessList();
+    setInterval(updateProcessList, 10000); // keep suggestions fresh
+    
+    const procInput = document.getElementById('proc-search');
+    const suggestionsDiv = document.getElementById('proc-suggestions');
+    const resultDiv = document.getElementById('proc-search-result');
+    
+    procInput.addEventListener('input', function() {
+      const val = (this.value || '').toLowerCase();
+      suggestionsDiv.innerHTML = '';
+      suggestionsDiv.style.display = 'none';
+      resultDiv.textContent = '';
+      if (!val) return;
+      const matches = allProcesses.filter(p => (p.name||'').toLowerCase().includes(val));
+      if (matches.length) {
+        suggestionsDiv.style.display = '';
+        matches.slice(0,8).forEach(proc => {
+          const div = document.createElement('div');
+          div.textContent = proc.name;
+          div.style.padding = '0.4em 1em';
+          div.style.cursor = 'pointer';
+          div.onmouseover = () => div.style.background = '#f0fdf4';
+          div.onmouseout = () => div.style.background = '';
+          div.onclick = () => {
+            procInput.value = proc.name;
+            suggestionsDiv.style.display = 'none';
+            showProcResult(proc.name);
+          };
+          suggestionsDiv.appendChild(div);
+        });
+      }
+    });
+    procInput.addEventListener('blur', () => setTimeout(()=>{ suggestionsDiv.style.display='none'; }, 200));
+    procInput.addEventListener('focus', function() {
+      if (this.value) this.dispatchEvent(new Event('input'));
+    });
+    async function showProcResult(name) {
+      const proc = allProcesses.find(p => (p.name||'').toLowerCase() === name.toLowerCase());
+      let status, risk;
+      if (proc) {
+        status = `<span style='color:#16a34a;font-weight:600;'>Running</span>`;
+        risk = proc.risk || 'Low';
+      } else {
+        status = `<span style='color:#e11d48;font-weight:600;'>Not running</span>`;
+        risk = 'Unknown';
+      }
+      let badgeColor = '#22c55e', badgeBg = '#dcfce7';
+      if (risk === 'Medium') { badgeColor = '#eab308'; badgeBg = '#fef9c3'; }
+      if (risk === 'High') { badgeColor = '#ef4444'; badgeBg = '#fee2e2'; }
+      let riskHtml = `<span style='display:inline-block; padding:0.32em 1.1em; font-size:1em; border-radius:999px; background:${badgeBg}; color:${badgeColor}; font-weight:600; letter-spacing:0.5px;'>${risk}</span>`;
+      resultDiv.innerHTML = `Status: ${status}<br>Risk Level: ${riskHtml}`;
+    }
+    procInput.addEventListener('change', function() {
+      if (this.value) showProcResult(this.value);
+    });
+    // Initial load
+    refreshProcesses();
+  </script>
+</body>
+</html>
