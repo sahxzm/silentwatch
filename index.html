@@ -80,7 +80,8 @@
       <thead>
         <tr style="background: #f0fdf4; color: #166534; font-size: 1.08rem;">
           <th style="padding: 0.7rem 1rem; border: none; text-align: left;">PID</th>
-          <th style="padding: 0.7rem 1rem; border: none; text-align: left;">Window Title</th>
+          <th style="padding: 0.7rem 1rem; border: none; text-align: left;">Process Name</th>
+          <th style="padding: 0.7rem 1rem; border: none; text-align: left;">Window Titles</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -180,7 +181,9 @@
         tbody.innerHTML = '';
         apps.forEach(app => {
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td style=\"padding:0.7rem 1rem;\">${app.pid}</td><td style=\"padding:0.7rem 1rem;\">${app.windowTitle}</td>`;
+          // If windowTitles is an array, join them with comma, else fallback
+          let titles = Array.isArray(app.windowTitles) ? app.windowTitles.join(', ') : (app.windowTitle || '');
+          tr.innerHTML = `<td style=\"padding:0.7rem 1rem;\">${app.pid}</td><td style=\"padding:0.7rem 1rem;\">${app.processName || ''}</td><td style=\"padding:0.7rem 1rem;\">${titles}</td>`;
           tbody.appendChild(tr);
         });
         log.textContent = `Found ${apps.length} running application(s).`;
