@@ -1,5 +1,7 @@
 # Silentwatch
 
+![Silentwatch Logo](./screenshots/silentwatch-logo.png)
+
 A powerful system monitoring application built with Electron and React, specifically designed to detect and prevent cheating tools and hacking utilities.
 
 ## Key Capabilities
@@ -16,6 +18,30 @@ A powerful system monitoring application built with Electron and React, specific
 - Monitors for hidden overlays and screen capturing tools commonly used in cheating
 - Uses sophisticated risk assessment to identify suspicious processes
 - Provides real-time alerts for potential cheating attempts
+
+## Screenshots
+
+### Process Monitor
+![Process Monitor](./screenshots/process-monitor.png)
+- Detailed process information
+- Search and filter capabilities
+- Risk assessment scores
+
+### Running Applications
+![Running Applications](./screenshots/running-applications.png)
+- List of all active applications
+- Real-time updates of running programs
+
+### Overlay Scanner
+![Overlay Scanner](./screenshots/overlay-scanner.png)
+- Hidden window detection
+- Overlay scanning results
+- Real-time updates
+
+### Need Consideration
+![Need Consideration](./screenshots/need-consideration.png)
+- List of suspicious processes
+- Detailed risk information
 
 ## Prerequisites
 
