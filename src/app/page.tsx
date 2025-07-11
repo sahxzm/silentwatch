@@ -40,9 +40,20 @@ export default function Home() {
     setAnalyzedWindows([]);
     addLog('Info', 'Starting AI-powered system scan...');
     try {
+      // Fetch overlay scan results from API
+      const overlayPromise = fetch('/api/scan-overlays')
+        .then(async (res) => {
+          if (!res.ok) throw new Error('Overlay scan API failed');
+          return res.json();
+        })
+        .catch((err) => {
+          addLog('Warning', 'Overlay scan API failed, using mock data.');
+          return mockWindows;
+        });
+      
       const [processResults, windowResults] = await Promise.all([
         analyzeProcesses(mockProcesses),
-        analyzeWindows(mockWindows),
+        overlayPromise,
       ]);
       
       setAnalyzedProcesses(processResults);

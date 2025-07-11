@@ -95,8 +95,10 @@
       <thead>
         <tr style="background: #f0fdf4; color: #166534; font-size: 1.08rem;">
           <th style="padding: 0.7rem 1rem; border: none; text-align: left;">Window Title</th>
-          <th style="padding: 0.7rem 1rem; border: none; text-align: left;">Risk</th>
-          <th style="padding: 0.7rem 1rem; border: none; text-align: left;">Reason</th>
+          <th style="padding: 0.7rem 1rem; border: none; text-align: left;">Process Name</th>
+          <th style="padding: 0.7rem 1rem; border: none; text-align: left;">Status</th>
+          <th style="padding: 0.7rem 1rem; border: none; text-align: left;">Properties</th>
+          <th style="padding: 0.7rem 1rem; border: none; text-align: left;">Suspicious</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -160,14 +162,29 @@
         const tbody = document.querySelector('#overlay-table tbody');
         tbody.innerHTML = '';
         overlays.forEach(win => {
-          const tr = document.createElement('tr');
+          // Map risk to status
+          let status = 'Visible';
+          if (win.risk === 'High') status = 'Transparent';
+          else if (win.risk === 'Low') status = 'Visible';
+          // Properties as array
+          let properties = [win.reason || '', win.risk || ''].filter(Boolean).join(', ');
+          // Suspicious badge
+          let suspicious = win.risk === 'High';
           let badgeColor = '#22c55e', badgeBg = '#dcfce7';
           if (win.risk === 'Medium') { badgeColor = '#eab308'; badgeBg = '#fef9c3'; }
           if (win.risk === 'High') { badgeColor = '#ef4444'; badgeBg = '#fee2e2'; }
-          tr.innerHTML = `<td style=\"padding:0.7rem 1rem;\">${win.windowTitle}</td><td style=\"padding:0.7rem 1rem;\"><span style=\"display:inline-block; padding:0.32em 1.1em; font-size:1em; border-radius:999px; background:${badgeBg}; color:${badgeColor}; font-weight:600; letter-spacing:0.5px;\">${win.risk}</span></td><td style=\"padding:0.7rem 1rem;\">${win.reason}</td>`;
+          tr = document.createElement('tr');
+          if (suspicious) tr.style.background = '#fee2e2';
+          tr.innerHTML = `
+            <td style=\"padding:0.7rem 1rem; font-weight:600;\">${win.windowTitle}</td>
+            <td style=\"padding:0.7rem 1rem;\">${win.processName || ''}</td>
+            <td style=\"padding:0.7rem 1rem;\">${status}</td>
+            <td style=\"padding:0.7rem 1rem; font-size:0.95em; color:#64748b;\">${properties}</td>
+            <td style=\"padding:0.7rem 1rem;\">${suspicious ? `<span style='color:#ef4444;font-weight:bold;'>Yes &#9888;</span>` : `<span style='color:#22c55e;font-weight:bold;'>No</span>`}</td>
+          `;
           tbody.appendChild(tr);
         });
-        log.textContent = `Found ${overlays.length} suspicious overlay(s).`;
+        log.textContent = `Found ${overlays.length} overlay window(s).`;
       } catch (err) {
         log.textContent = 'Error: ' + err;
       }

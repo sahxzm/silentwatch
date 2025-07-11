@@ -104,7 +104,16 @@ async function scanOverlays() {
 
 async function getRunningApps() {
   return new Promise((resolve, reject) => {
-    const psScriptPath = path.join(__dirname, 'get_processes.ps1');
+    // Helper to resolve correct script path in dev and packaged environments
+    function getScriptPath(scriptRelativePath) {
+      if (process.mainModule && process.mainModule.filename.indexOf('app.asar') > -1) {
+        // In production, use resourcesPath
+        return path.join(process.resourcesPath, scriptRelativePath);
+      }
+      // In dev, use source path
+      return path.join(__dirname, scriptRelativePath);
+    }
+    const psScriptPath = getScriptPath('get_processes.ps1');
     const command = `powershell -ExecutionPolicy Bypass -File "${psScriptPath}"`;
     
     exec(command, { windowsHide: true }, (error, stdout, stderr) => {

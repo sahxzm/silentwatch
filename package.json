@@ -65,6 +65,12 @@
     "files": [
       "**/*"
     ],
+    "extraFiles": [
+      {
+        "from": "src/lib/get_processes.ps1",
+        "to": "resources/get_processes.ps1"
+      }
+    ],
     "directories": {
       "buildResources": "assets"
     },
