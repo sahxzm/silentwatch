@@ -2,8 +2,10 @@
   "name": "nextn",
   "version": "0.1.0",
   "private": true,
-  "main": "electron.js", 
+  "main": "electron.js",
   "scripts": {
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win --x64",
     "electron": ".\\node_modules\\.bin\\electron.cmd .",
     "dev": "next dev --turbopack -p 9002",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
@@ -57,11 +59,33 @@
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.24.2"
   },
+  "build": {
+    "appId": "com.silentwatch.app",
+    "productName": "Silentwatch",
+    "files": [
+      "**/*"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Silentwatch",
+      "deleteAppDataOnUninstall": true
+    }
+  },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "electron": "^37.2.1",
+    "electron-builder": "^26.0.12",
     "genkit-cli": "^1.13.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
