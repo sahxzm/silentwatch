@@ -1,7 +1,7 @@
-const { exec } = require('child_process');
+const { exec, execFile } = require('child_process');
 const { BrowserWindow } = require('electron');
 const path = require('path');
-
+const fs = require('fs');
 
 // --- Real-Time Process Monitoring ---
 async function monitorProcesses() {
@@ -84,8 +84,6 @@ async function monitorProcesses() {
 
 
 // --- Hidden Overlay & Window Detection ---
-const { execFile } = require('child_process');
-
 async function scanOverlays() {
   return new Promise((resolve, reject) => {
     const exePath = path.join(__dirname, 'overlay_scanner.exe');
@@ -105,24 +103,35 @@ async function scanOverlays() {
 }
 
 async function getRunningApps() {
-  const { execFile } = require('child_process');
-  const path = require('path');
   return new Promise((resolve, reject) => {
-    const exePath = path.join(__dirname, 'window_apps.exe');
-    execFile(exePath, [], { windowsHide: true }, (error, stdout, stderr) => {
-      if (error) return reject(error);
-      const apps = [];
-      stdout.split(/\r?\n/).forEach(line => {
-        if (line.trim()) {
-          try {
-            apps.push(JSON.parse(line));
-          } catch {}
-        }
-      });
-      resolve(apps);
+    const psScriptPath = path.join(__dirname, 'get_processes.ps1');
+    const command = `powershell -ExecutionPolicy Bypass -File "${psScriptPath}"`;
+    
+    exec(command, { windowsHide: true }, (error, stdout, stderr) => {
+      if (error) {
+        console.error('Error executing PowerShell script:', error);
+        return reject(error);
+      }
+      
+      try {
+        // Parse the JSON output from PowerShell
+        const processes = JSON.parse(stdout.trim() || '[]');
+        
+        // Transform to match expected format
+        const apps = processes.map(proc => ({
+          pid: proc.Id,
+          processName: proc.ProcessName,
+          windowTitle: proc.MainWindowTitle || ''
+        }));
+        
+        resolve(apps);
+      } catch (parseError) {
+        console.error('Error parsing process data:', parseError);
+        console.error('Raw output:', stdout);
+        reject(parseError);
+      }
     });
   });
 }
 
 module.exports = { monitorProcesses, scanOverlays, getRunningApps };
-
