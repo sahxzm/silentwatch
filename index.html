@@ -21,6 +21,7 @@
     th, td { padding: 0.5rem; border-bottom: 1px solid #333; }
     th { background: #23232a; }
   </style>
+
 </head>
 <body style="background: #f7fef6; min-height: 100vh;">
   <div style="padding: 2rem 0 1rem 2rem; display: flex; align-items: center; gap: 1rem;">
@@ -34,6 +35,7 @@
     <div class="tab active" id="tab-process">Process Monitor</div>
     <div class="tab" id="tab-apps">Running Applications</div>
     <div class="tab" id="tab-overlay">Overlay Scanner</div>
+    <div class="tab" id="tab-need">Need Consideration</div>
   </div>
   <div class="panel" id="panel-process" style="background: #fff; border-radius: 12px; box-shadow: 0 2px 8px #0001; margin: 0 2vw 2rem 2vw; padding: 2rem 1vw; max-width: 100vw; color: #18181b; overflow-x: auto;">
     <h2 style="color: #166534; font-size: 2rem; margin-bottom: 1.5rem;">Running Processes</h2>
@@ -58,6 +60,7 @@
         </thead>
         <tbody></tbody>
       </table>
+
     </div>
     <style>
       @media (max-width: 900px) {
@@ -88,6 +91,47 @@
     </table>
     <div class="log-panel" id="apps-log"></div>
   </div>
+  <div class="panel" id="panel-need" style="display:none; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px #0001; margin: 0 2vw 2rem 2vw; padding: 2rem 1vw; max-width: 100vw; color: #18181b; overflow-x: auto;">
+    <h2 style="color: #ef4444; font-size: 2rem; margin-bottom: 1.5rem;">Need Consideration</h2>
+    <div id="need-consideration-section" style="margin-top:1.5rem;">
+      <button id="need-refresh-btn" style="background: #16a34a; color: #fff; border: none; padding: 0.7rem 2.2rem; border-radius: 8px; font-size: 1.1rem; font-weight: 600; box-shadow: 0 1px 3px #0001; margin-bottom: 1.2rem; cursor:pointer;">Refresh</button>
+      <style>
+        .need-consideration-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1em;
+        }
+        .need-consideration-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 0.97em;
+        }
+        .need-consideration-table th, .need-consideration-table td {
+          padding: 0.38em 0.4em;
+          word-break: break-all;
+        }
+        @media (max-width: 900px) {
+          .need-consideration-grid { grid-template-columns: 1fr; }
+        }
+      </style>
+      <div class="need-consideration-grid">
+        <div>
+          <h4 style="color: #eab308; font-size: 1.08rem; margin-bottom: 0.4rem;">Need Some Consideration <span id="need-some-count" style="background:#fde68a; color:#92400e; border-radius:1em; padding:0.15em 0.6em; font-size:0.93em; font-weight:600;">0</span></h4>
+          <table id="need-some-table" class="need-consideration-table" style="background:#fffbe9; color:#92400e;">
+            <thead><tr><th style="text-align:left;">Process Name</th><th style="text-align:right; white-space:nowrap; padding-right:0.4em;">Count</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div>
+          <h4 style="color: #ef4444; font-size: 1.08rem; margin-bottom: 0.4rem;">Need High Consideration <span id="need-high-count" style="background:#fee2e2; color:#991b1b; border-radius:1em; padding:0.15em 0.6em; font-size:0.93em; font-weight:600;">0</span></h4>
+          <table id="need-high-table" class="need-consideration-table" style="background:#fff1f2; color:#991b1b;">
+            <thead><tr><th style="text-align:left;">Process Name</th><th style="text-align:right; white-space:nowrap; padding-right:0.4em;">Count</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="panel" id="panel-overlay" style="display:none; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px #0001; margin: 0 2vw 2rem 2vw; padding: 2rem 1vw; max-width: 100vw; color: #18181b; overflow-x: auto;">
     <h2 style="color: #166534; font-size: 2rem; margin-bottom: 1.5rem;">Overlay Scanner</h2>
     <button onclick="refreshOverlays()" style="background: #16a34a; color: #fff; border: none; padding: 0.7rem 2.2rem; border-radius: 8px; font-size: 1.1rem; font-weight: 600; box-shadow: 0 1px 3px #0001; margin-bottom: 1.2rem; cursor:pointer;">Scan</button>
@@ -116,22 +160,30 @@
     document.getElementById('tab-overlay').onclick = () => {
       setTab('overlay');
     };
+    document.getElementById('tab-need').onclick = () => {
+      setTab('need');
+    };
     function setTab(tab) {
       document.getElementById('tab-process').classList.remove('active');
       document.getElementById('tab-apps').classList.remove('active');
       document.getElementById('tab-overlay').classList.remove('active');
+      document.getElementById('tab-need').classList.remove('active');
       document.getElementById('panel-process').style.display = 'none';
       document.getElementById('panel-apps').style.display = 'none';
       document.getElementById('panel-overlay').style.display = 'none';
+      document.getElementById('panel-need').style.display = 'none';
       if (tab === 'process') {
         document.getElementById('tab-process').classList.add('active');
         document.getElementById('panel-process').style.display = '';
       } else if (tab === 'apps') {
         document.getElementById('tab-apps').classList.add('active');
         document.getElementById('panel-apps').style.display = '';
-      } else {
+      } else if (tab === 'overlay') {
         document.getElementById('tab-overlay').classList.add('active');
         document.getElementById('panel-overlay').style.display = '';
+      } else if (tab === 'need') {
+        document.getElementById('tab-need').classList.add('active');
+        document.getElementById('panel-need').style.display = '';
       }
     }
     async function refreshProcesses() {
@@ -210,11 +262,61 @@
     }
     // --- Process Search with Suggestions ---
     let allProcesses = [];
+
+    // --- Need Consideration Section ---
+    function updateNeedConsideration() {
+      // allProcesses is an array of objects with risk and name fields
+      const medium = allProcesses.filter(p => p.risk === 'Medium');
+      const high = allProcesses.filter(p => p.risk === 'High');
+
+      // Count unique process names for Medium
+      const mediumMap = {};
+      medium.forEach(p => {
+        if (!p.name) return;
+        mediumMap[p.name] = (mediumMap[p.name] || 0) + 1;
+      });
+      // Count unique process names for High
+      const highMap = {};
+      high.forEach(p => {
+        if (!p.name) return;
+        highMap[p.name] = (highMap[p.name] || 0) + 1;
+      });
+
+      // Update Medium table
+      const mediumTable = document.getElementById('need-some-table').querySelector('tbody');
+      mediumTable.innerHTML = '';
+      Object.entries(mediumMap).forEach(([name, count]) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td style='padding:0.5em;'>${name}</td><td style='padding:0.5em; text-align:right;'>${count}</td>`;
+        mediumTable.appendChild(tr);
+      });
+      document.getElementById('need-some-count').textContent = Object.keys(mediumMap).length;
+
+      // Update High table
+      const highTable = document.getElementById('need-high-table').querySelector('tbody');
+      highTable.innerHTML = '';
+      Object.entries(highMap).forEach(([name, count]) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td style='padding:0.5em;'>${name}</td><td style='padding:0.5em; text-align:right;'>${count}</td>`;
+        highTable.appendChild(tr);
+      });
+      document.getElementById('need-high-count').textContent = Object.keys(highMap).length;
+    }
+
     async function updateProcessList() {
       allProcesses = await ipcRenderer.invoke('monitor-processes');
     }
     updateProcessList();
-    setInterval(updateProcessList, 10000); // keep suggestions fresh
+    // Refresh Need Consideration on button click
+    document.getElementById('need-refresh-btn').addEventListener('click', async function() {
+      await updateProcessList();
+      updateNeedConsideration();
+    });
+    // Also update immediately after page load
+    (async function() {
+      await updateProcessList();
+      updateNeedConsideration();
+    })();
     
     const procInput = document.getElementById('proc-search');
     const suggestionsDiv = document.getElementById('proc-suggestions');

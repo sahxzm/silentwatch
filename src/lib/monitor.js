@@ -7,18 +7,33 @@ const fs = require('fs');
 async function monitorProcesses() {
   // Known safe system process names
   const systemProcesses = [
-    'svchost.exe', 'wininit.exe', 'lsass.exe', 'csrss.exe', 'winlogon.exe',
-    'services.exe', 'explorer.exe', 'smss.exe', 'System', 'conhost.exe',
-    'dwm.exe', 'fontdrvhost.exe', 'audiodg.exe', 'spoolsv.exe', 'WUDFHost.exe',
+    'system idle process', 'system', 'secure system', 'registry', 'lsaiso.exe', 'wudfhost.exe', 'intelcphdcpsvc.exe',
+    'nvdisplay.container.exe', 'memory compression', 'adesv2svc.exe', 'aaadsvc.exe', 'acerservicewrapper.exe',
+    'artaimmxservice.exe', 'acersystemcentralservice.exe', 'acerqaagent.exe', 'elanfpservice.exe', 'acerdiaagent.exe',
+    'acerccagent.exe', 'intelaudioservice.exe', 'oneapp.igcc.winservice.exe', 'acerezservice.exe', 'acerpixyservice.exe',
+    'officeclicktorun.exe', 'ipfsvc.exe', 'mpdefendercoreservice.exe', 'ipf_uf.exe', 'rstmwservice.exe',
+    'rtkauduservice64.exe', 'pg_ctl.exe', 'msmpeng.exe', 'nvcontainer.exe', 'wmiregistrationservice.exe', 'wslservice.exe',
+    'acersysmonitorservice.exe', 'acersyshardwareservice.exe', 'pgagent.exe', 'jhi_service.exe', 'ngciso.exe',
+    'postgres.exe', 'acerservice.exe', 'wmiprvse.exe', 'wlanext.exe', 'aggregatorhost.exe', 'nvsphelper64.exe',
+    'runtimebroker.exe', 'searchindexer.exe', 'unsecapp.exe', 'accuserps.exe', 'aquauserps.exe', 'nissrv.exe',
+    'securityhealthservice.exe', 'cmd.exe', 'powershell.exe', 'conhost.exe', 'ctfmon.exe', 'spoolsv.exe',
+    'svchost.exe', 'wininit.exe', 'lsass.exe', 'csrss.exe', 'winlogon.exe', 'services.exe', 'explorer.exe', 'smss.exe',
+    'dwm.exe', 'fontdrvhost.exe', 'audiodg.exe', 'spoolsv.exe', 'wudfhost.exe',
+    // Add more as needed
   ];
   // Known trusted vendors (placeholder, real check needs signature API)
-  const knownVendors = ['Microsoft', 'Intel', 'NVIDIA', 'AMD', 'Google', 'Mozilla'];
+  const knownVendors = ['Microsoft', 'Intel', 'NVIDIA', 'AMD', 'Google', 'Mozilla', 'Acer'];
   // Known safe folders
   const safeFolders = [
-    'C:\\Windows\\System32',
-    'C:\\Program Files',
-    'C:\\Program Files (x86)',
-    'C:\\Windows',
+    'c:\\windows\\system32',
+    'c:\\windows',
+    'c:\\windowsapps',
+    'c:\\windows\\systemapps',
+    'c:/windows/system32',
+    'c:/windows',
+    'c:/windowsapps',
+    'c:/windows/systemapps', // for system user apps, optionally
+    // Add more as needed
   ];
   // Suspicious folders
   const suspiciousFolders = [
@@ -143,4 +158,47 @@ async function getRunningApps() {
   });
 }
 
-module.exports = { monitorProcesses, scanOverlays, getRunningApps };
+// Returns a unique list of process names that are Medium or High risk
+async function getNeedConsiderationProcesses() {
+  const processes = await monitorProcesses();
+  // Known safe system process names (must match those in monitorProcesses)
+  const systemProcesses = [
+    'system idle process', 'system', 'secure system', 'registry', 'lsaiso.exe', 'wudfhost.exe', 'intelcphdcpsvc.exe',
+    'nvdisplay.container.exe', 'memory compression', 'adesv2svc.exe', 'aaadsvc.exe', 'acerservicewrapper.exe',
+    'artaimmxservice.exe', 'acersystemcentralservice.exe', 'acerqaagent.exe', 'elanfpservice.exe', 'acerdiaagent.exe',
+    'acerccagent.exe', 'intelaudioservice.exe', 'oneapp.igcc.winservice.exe', 'acerezservice.exe', 'acerpixyservice.exe',
+    'officeclicktorun.exe', 'ipfsvc.exe', 'mpdefendercoreservice.exe', 'ipf_uf.exe', 'rstmwservice.exe',
+    'rtkauduservice64.exe', 'pg_ctl.exe', 'msmpeng.exe', 'nvcontainer.exe', 'wmiregistrationservice.exe', 'wslservice.exe',
+    'acersysmonitorservice.exe', 'acersyshardwareservice.exe', 'pgagent.exe', 'jhi_service.exe', 'ngciso.exe',
+    'postgres.exe', 'acerservice.exe', 'wmiprvse.exe', 'wlanext.exe', 'aggregatorhost.exe', 'nvsphelper64.exe',
+    'runtimebroker.exe', 'searchindexer.exe', 'unsecapp.exe', 'accuserps.exe', 'aquauserps.exe', 'nissrv.exe',
+    'securityhealthservice.exe', 'cmd.exe', 'powershell.exe', 'conhost.exe', 'ctfmon.exe', 'spoolsv.exe',
+    'svchost.exe', 'wininit.exe', 'lsass.exe', 'csrss.exe', 'winlogon.exe', 'services.exe', 'explorer.exe', 'smss.exe',
+    'dwm.exe', 'fontdrvhost.exe', 'audiodg.exe', 'spoolsv.exe', 'wudfhost.exe',
+    // Add more as needed
+  ];
+  const safeFolders = [
+    'c:\\windows\\system32',
+    'c:\\windows',
+    'c:\\windowsapps',
+    'c:\\windows\\systemapps',
+    'c:/windows/system32',
+    'c:/windows',
+    'c:/windowsapps',
+    'c:/windows/systemapps' // for system user apps, optionally
+    // Add more as needed
+  ];
+  // Known trusted vendors (placeholder)
+  const knownVendors = ['microsoft', 'intel', 'nvidia', 'amd', 'google', 'mozilla', 'acer'];
+
+  const uniqueNames = Array.from(new Set(
+    processes.filter(p => (p.risk === 'Medium' || p.risk === 'High') &&
+      !systemProcesses.includes((p.name || '').toLowerCase()) &&
+      !safeFolders.some(f => (p.exePath || '').toLowerCase().startsWith(f)) &&
+      !knownVendors.some(v => (p.vendor || '').toLowerCase().includes(v))
+    ).map(p => p.name)
+  ));
+  return uniqueNames;
+}
+
+module.exports = { monitorProcesses, scanOverlays, getRunningApps, getNeedConsiderationProcesses };

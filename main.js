@@ -26,6 +26,7 @@ app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
 });
 
-const { monitorProcesses, scanOverlays } = require('./src/lib/monitor');
+const { monitorProcesses, scanOverlays, getNeedConsiderationProcessesFuzzy } = require('./src/lib/monitor');
 ipcMain.handle('monitor-processes', monitorProcesses);
 ipcMain.handle('scan-overlays', scanOverlays);
+

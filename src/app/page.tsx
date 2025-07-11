@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProcessMonitor from '@/components/process-monitor';
 import OverlayScanner from '@/components/overlay-scanner';
 import LogPanel from '@/components/log-panel';
+import NeedConsideration from '@/components/need-consideration';
 import ReportDialog from '@/components/report-dialog';
 import { mockProcesses, mockWindows, initialLogs } from '@/lib/mock-data';
 import type { Process, WindowInfo, LogEntry } from '@/lib/types';
@@ -146,6 +147,10 @@ export default function Home() {
             
             <div className="lg:col-span-1">
               <LogPanel logs={logs} />
+              <NeedConsideration
+                processNames={Array.from(new Set(analyzedProcesses.filter(p => p.risk === 'High' || p.risk === 'Medium').map(p => p.name)))}
+                isLoading={isLoading}
+              />
             </div>
           </div>
         </div>
